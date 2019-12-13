@@ -3,6 +3,8 @@
 #[macro_use]
 extern crate serde_derive;
 
+pub use crate::error::{Error, ErrorKind};
+
 #[cfg(test)]
 mod tests;
 
@@ -12,7 +14,7 @@ mod time;
 mod bs64;
 
 /// Registered Claim Names, see https://tools.ietf.org/html/rfc7519#section-4.1
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     /// Issuer
     #[serde(skip_serializing_if = "Option::is_none")]

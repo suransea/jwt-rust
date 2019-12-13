@@ -1,18 +1,19 @@
 //! JSON Web Signature
 
-use std::str::FromStr;
-
+use serde::de::DeserializeOwned;
 use serde::Serialize;
-
-pub use sign::Alg;
+use serde_json as json;
 
 use crate::bs64;
+use crate::error::{Error, ErrorKind};
+
+pub use self::sign::Alg;
 
 pub mod sign;
 pub mod verify;
 
 /// Registered Header Parameter Names, see https://tools.ietf.org/html/rfc7515#section-4.1
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Header {
     /// Type of JWS
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,32 +52,33 @@ impl Header {
     }
 }
 
+#[derive(Debug)]
 pub struct Token<T: Serialize> {
     pub header: Header,
     pub claims: T,
-    pub signature: String,
+    pub signature: Vec<u8>,
 }
 
 impl<T: Serialize> Token<T> {
-    pub fn new(claims: T) -> Token<T> {
-        Token::with_header(Header::new(), claims)
+    pub fn with_claims(claims: T) -> Token<T> {
+        Token::with_header_and_claims(Header::new(), claims)
     }
 
-    pub fn with_header(header: Header, claims: T) -> Token<T> {
+    pub fn with_header_and_claims(header: Header, claims: T) -> Token<T> {
         Token {
             header,
             claims,
-            signature: "".to_string(),
+            signature: [].to_vec(),
         }
     }
 
     pub fn sign(&mut self, alg: &Alg) {
         self.header.alg = Some(alg.to_string());
-        let header = serde_json::to_string(&self.header)
+        let header = json::to_string(&self.header)
             .map(bs64::from_string)
             .unwrap();
 
-        let claims = serde_json::to_string(&self.claims)
+        let claims = json::to_string(&self.claims)
             .map(bs64::from_string)
             .unwrap();
 
@@ -87,11 +89,11 @@ impl<T: Serialize> Token<T> {
 
 impl<T: Serialize> ToString for Token<T> {
     fn to_string(&self) -> String {
-        let header = serde_json::to_string(&self.header)
+        let header = json::to_string(&self.header)
             .map(bs64::from_string)
             .unwrap();
 
-        let claims = serde_json::to_string(&self.claims)
+        let claims = json::to_string(&self.claims)
             .map(bs64::from_string)
             .unwrap();
 
@@ -100,14 +102,29 @@ impl<T: Serialize> ToString for Token<T> {
     }
 }
 
-impl<T: Serialize> FromStr for Token<T> {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        unimplemented!()
+fn rsplit2_dot(s: &str) -> Result<(&str, &str), ErrorKind> {
+    let mut it = s.rsplitn(2, ".");
+    match (it.next(), it.next()) {
+        (Some(x), Some(y)) => Ok((x, y)),
+        _ => Err(ErrorKind::InvalidFormat("cannot split with a dot.".to_owned())),
     }
 }
 
-pub fn parse<T: Serialize>(token: &str) -> Token<T> {
-    unimplemented!()
+pub fn parse<T: Serialize + DeserializeOwned>(token: &str, alg: &Alg) -> Result<Token<T>, Error> {
+    let (signature, f2s) = rsplit2_dot(token)?;
+    let signature = bs64::to_bytes(signature.to_owned())?;
+
+    if !verify::check_sign(f2s, &signature, alg) {
+        return Err(Error::from(ErrorKind::InvalidSignature));
+    }
+
+    let (claims, header) = rsplit2_dot(f2s)?;
+
+    let header = bs64::to_string(header.to_owned())?;
+    let claims = bs64::to_string(claims.to_owned())?;
+
+    let header = json::from_str(&header)?;
+    let claims = json::from_str(&claims)?;
+
+    Ok(Token { header, claims, signature })
 }
