@@ -11,15 +11,3 @@ fn now_unix() -> Duration {
 pub fn now_secs() -> u64 {
     now_unix().as_secs()
 }
-
-pub fn now_millis() -> u128 {
-    now_unix().as_millis()
-}
-
-pub fn now_micros() -> u128 {
-    now_unix().as_micros()
-}
-
-pub fn now_nanos() -> u128 {
-    now_unix().as_nanos()
-}

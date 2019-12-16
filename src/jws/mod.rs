@@ -1,16 +1,16 @@
-//! JSON Web Signature
+//! JSON Web Signature, see https://tools.ietf.org/html/rfc7515
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json as json;
 
 use crate::bs64;
-use crate::error::{Error, ErrorKind};
 
-pub use self::sign::Alg;
+pub use self::parse::{Config, parse, parse_default, parse_verify_none};
+pub use self::sign::{Algorithm, Key};
 
-pub mod sign;
-pub mod verify;
+mod sign;
+mod verify;
+mod parse;
 
 /// Registered Header Parameter Names, see https://tools.ietf.org/html/rfc7515#section-4.1
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,7 +72,7 @@ impl<T: Serialize> Token<T> {
         }
     }
 
-    pub fn sign(&mut self, alg: &Alg) {
+    pub fn sign(&mut self, alg: &Algorithm) {
         self.header.alg = Some(alg.to_string());
         let header = json::to_string(&self.header)
             .map(bs64::from_string)
@@ -100,31 +100,4 @@ impl<T: Serialize> ToString for Token<T> {
         let sign = bs64::from_bytes(&self.signature);
         [header, claims, sign].join(".")
     }
-}
-
-fn rsplit2_dot(s: &str) -> Result<(&str, &str), ErrorKind> {
-    let mut it = s.rsplitn(2, ".");
-    match (it.next(), it.next()) {
-        (Some(x), Some(y)) => Ok((x, y)),
-        _ => Err(ErrorKind::InvalidFormat("cannot split with a dot.".to_owned())),
-    }
-}
-
-pub fn parse<T: Serialize + DeserializeOwned>(token: &str, alg: &Alg) -> Result<Token<T>, Error> {
-    let (signature, f2s) = rsplit2_dot(token)?;
-    let signature = bs64::to_bytes(signature.to_owned())?;
-
-    if !verify::check_sign(f2s, &signature, alg) {
-        return Err(Error::from(ErrorKind::InvalidSignature));
-    }
-
-    let (claims, header) = rsplit2_dot(f2s)?;
-
-    let header = bs64::to_string(header.to_owned())?;
-    let claims = bs64::to_string(claims.to_owned())?;
-
-    let header = json::from_str(&header)?;
-    let claims = json::from_str(&claims)?;
-
-    Ok(Token { header, claims, signature })
 }

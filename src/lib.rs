@@ -1,4 +1,4 @@
-//! Rust implementation of JSON Web Tokens.
+//! Rust implementation of JSON Web Tokens, see https://tools.ietf.org/html/rfc7519
 
 #[macro_use]
 extern crate serde_derive;
