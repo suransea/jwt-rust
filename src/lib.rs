@@ -40,7 +40,7 @@ pub struct Claims {
 }
 
 impl Claims {
-    pub fn new() -> Claims {
+    pub fn new() -> Self {
         Claims {
             iss: None,
             sub: None,

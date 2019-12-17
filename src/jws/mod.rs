@@ -1,11 +1,11 @@
-//! JSON Web Signature, see https://tools.ietf.org/html/rfc7515
+//! Signed JWTs, see https://tools.ietf.org/html/rfc7515
 
 use serde::Serialize;
 use serde_json as json;
 
 use crate::bs64;
 
-pub use self::parse::{Config, parse, parse_default, parse_verify_none};
+pub use self::parse::{Config, parse, parse_default, parse_verify_none, SignatureValidation};
 pub use self::sign::{Algorithm, Key};
 
 mod sign;
@@ -39,7 +39,7 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn new() -> Header {
+    pub fn new() -> Self {
         Header {
             typ: Some("JWT".to_string()),
             alg: None,
@@ -60,20 +60,20 @@ pub struct Token<T: Serialize> {
 }
 
 impl<T: Serialize> Token<T> {
-    pub fn with_claims(claims: T) -> Token<T> {
+    pub fn with_claims(claims: T) -> Self {
         Token::with_header_and_claims(Header::new(), claims)
     }
 
-    pub fn with_header_and_claims(header: Header, claims: T) -> Token<T> {
+    pub fn with_header_and_claims(header: Header, claims: T) -> Self {
         Token {
             header,
             claims,
-            signature: [].to_vec(),
+            signature: Default::default(),
         }
     }
 
-    pub fn sign(&mut self, alg: &Algorithm) {
-        self.header.alg = Some(alg.to_string());
+    pub fn sign(&mut self, key: &Key) {
+        self.header.alg = Some(key.alg.to_string());
         let header = json::to_string(&self.header)
             .map(bs64::from_string)
             .unwrap();
@@ -83,7 +83,7 @@ impl<T: Serialize> Token<T> {
             .unwrap();
 
         let f2s: String = [header, claims].join(".");
-        self.signature = alg.sign(&f2s);
+        self.signature = key.sign(&f2s);
     }
 }
 
@@ -97,7 +97,7 @@ impl<T: Serialize> ToString for Token<T> {
             .map(bs64::from_string)
             .unwrap();
 
-        let sign = bs64::from_bytes(&self.signature);
-        [header, claims, sign].join(".")
+        let signature = bs64::from_bytes(&self.signature);
+        [header, claims, signature].join(".")
     }
 }

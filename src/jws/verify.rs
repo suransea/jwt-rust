@@ -1,11 +1,11 @@
 //! Verify
 
 use crate::error::ErrorKind;
-use crate::jws::Algorithm;
+use crate::jws::Key;
 use crate::time;
 
-pub fn verify_signature(f2s: &str, sign: &[u8], alg: &Algorithm) -> Result<(), ErrorKind> {
-    let real_sign = alg.sign(&f2s);
+pub fn verify_signature(f2s: &str, sign: &[u8], key: &Key) -> Result<(), ErrorKind> {
+    let real_sign = key.sign(&f2s);
     if real_sign.as_slice() == sign {
         Ok(())
     } else {

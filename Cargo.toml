@@ -1,5 +1,5 @@
 [package]
-name = "jwt"
+name = "jwts"
 version = "0.1.0"
 authors = ["sea <simpleslight@icloud.com>"]
 license = "Apache-2.0"

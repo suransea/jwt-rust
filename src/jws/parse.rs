@@ -7,12 +7,18 @@ use serde_json::Value;
 
 use crate::bs64;
 use crate::error::{Error, ErrorKind};
-use crate::jws::sign::Algorithm;
-use crate::jws::Token;
+use crate::jws::{Header, Token};
+use crate::jws::sign::Key;
 use crate::jws::verify::{verify_exp, verify_iat, verify_nbf, verify_signature};
 
+pub enum SignatureValidation {
+    Key(Key),
+    KeyResolver(fn(header: &Header, claims: &Value) -> Key),
+    None,
+}
+
 pub struct Config {
-    pub signature_validation: Option<Algorithm>,
+    pub signature_validation: SignatureValidation,
     pub iat_validation: bool,
     pub nbf_validation: bool,
     pub exp_validation: bool,
@@ -21,7 +27,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            signature_validation: None,
+            signature_validation: SignatureValidation::None,
             iat_validation: true,
             nbf_validation: true,
             exp_validation: true,
@@ -30,7 +36,7 @@ impl Default for Config {
 }
 
 static VERIFY_NONE: Config = Config {
-    signature_validation: None,
+    signature_validation: SignatureValidation::None,
     iat_validation: false,
     nbf_validation: false,
     exp_validation: false,
@@ -48,13 +54,6 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
     let (signature, f2s) = rsplit2_dot(token)?;
     let signature = bs64::to_bytes(signature.to_owned())?;
 
-    match &config.signature_validation {
-        Some(alg) => {
-            verify_signature(f2s, &signature, alg)?;
-        }
-        None => ()
-    }
-
     let (claims, header) = rsplit2_dot(f2s)?;
 
     let header = bs64::to_string(header.to_owned())?;
@@ -62,6 +61,18 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
 
     let header = json::from_str(&header)?;
     let claims: Value = json::from_str(&claims)?;
+
+    match &config.signature_validation {
+        SignatureValidation::Key(key) => {
+            verify_signature(f2s, &signature, key)?;
+        }
+        SignatureValidation::KeyResolver(resolver) => {
+            let key = (resolver)(&header, &claims);
+            verify_signature(f2s, &signature, &key)?;
+        }
+        SignatureValidation::None => {}
+    }
+
     let nbf = claims["nbf"].as_u64();
     let iat = claims["iat"].as_u64();
     let exp = claims["exp"].as_u64();

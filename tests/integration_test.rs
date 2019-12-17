@@ -8,8 +8,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value};
 
-use jwt::{Claims, jws};
-use jwt::jws::{Algorithm, Header, Key, Token};
+use jwts::{Claims, jws};
+use jwts::jws::{Algorithm, Header, Key, SignatureValidation, Token};
 
 fn now_unix_secs() -> u64 {
     SystemTime::now()
@@ -39,10 +39,10 @@ fn test_sign() {
     let mut t2 = Token::with_claims(c2);
     let mut t3 = Token::with_claims(c3);
 
-    let algorithm = Algorithm::HS256(Key::from("secret"));
-    t1.sign(&algorithm);
-    t2.sign(&algorithm);
-    t3.sign(&algorithm);
+    let key = Key::new("secret", Algorithm::HS256);
+    t1.sign(&key);
+    t2.sign(&key);
+    t3.sign(&key);
 
     println!("{}\n{}\n{}", t1.to_string(), t2.to_string(), t3.to_string());
 }
@@ -56,7 +56,7 @@ fn test_sign_custom_header() {
     h.cty = Some("application/example".to_owned());
 
     let mut t = Token::with_header_and_claims(h, c);
-    t.sign(&Algorithm::HS256(Key::from("secret")));
+    t.sign(&Key::new("secret", Algorithm::HS256));
 
     println!("{}", t.to_string());
 }
@@ -90,14 +90,18 @@ fn test_parse_error() {
     h.cty = Some("application/example".to_owned());
 
     let mut t = Token::with_header_and_claims(h, c);
-    t.sign(&Algorithm::HS256(Key::from("secret")));
+    t.sign(&Key::new("secret", Algorithm::HS256));
     let t = t.to_string();
     println!("{}", t);
 
 
     // parse
+    let signature_validation = SignatureValidation::KeyResolver(|h, c| {
+        Key::new("secret", Algorithm::HS256)
+    });
+
     let conf = jws::Config {
-        signature_validation: Some(Algorithm::HS256(Key::from("secret"))),
+        signature_validation,
         iat_validation: true,
         nbf_validation: true,
         exp_validation: true,
