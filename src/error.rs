@@ -15,34 +15,13 @@ impl Error {
 #[derive(Debug)]
 pub enum ErrorKind {
     Malformed,
-    AlgorithmNotMatched,
+    AlgorithmMismatch,
     SignatureInvalid,
-    KeyInvalid,
-    BeforeIat,
+    InvalidKey,
+    InvalidIat,
     BeforeNbf,
-    Expired(u64),
+    TokenExpired(u64),
     Signing,
-}
-
-impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match self {
-            ErrorKind::Malformed => write!(f, "malformed token"),
-            ErrorKind::AlgorithmNotMatched => write!(f, "algorithm don't matched."),
-            ErrorKind::SignatureInvalid => write!(f, "invalid signature."),
-            ErrorKind::BeforeIat => write!(f, "token used before iat."),
-            ErrorKind::BeforeNbf => write!(f, "token used before nbf."),
-            ErrorKind::Expired(nsec) => write!(f, "token expired by {}s.", nsec),
-            ErrorKind::KeyInvalid => write!(f, "invalid key."),
-            ErrorKind::Signing => write!(f, "errors occur in signing."),
-        }
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        self.0.fmt(f)
-    }
 }
 
 impl From<ErrorKind> for Error {
@@ -71,7 +50,7 @@ impl From<string::FromUtf8Error> for Error {
 
 impl From<ring::error::KeyRejected> for Error {
     fn from(_: ring::error::KeyRejected) -> Self {
-        Error(ErrorKind::KeyInvalid)
+        Error(ErrorKind::InvalidKey)
     }
 }
 

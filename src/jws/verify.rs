@@ -25,7 +25,7 @@ pub fn verify_iat(iat: u64) -> Result<(), ErrorKind> {
     if time::now_secs() >= iat {
         Ok(())
     } else {
-        Err(ErrorKind::BeforeIat)
+        Err(ErrorKind::InvalidIat)
     }
 }
 
@@ -42,7 +42,7 @@ pub fn verify_exp(exp: u64) -> Result<(), ErrorKind> {
     if now < exp {
         Ok(())
     } else {
-        Err(ErrorKind::Expired(now - exp))
+        Err(ErrorKind::TokenExpired(now - exp))
     }
 }
 

@@ -66,14 +66,14 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
     match &config.signature_validation {
         SignatureValidation::Key(key) => {
             if alg.is_some() && *alg.as_ref().unwrap() != key.alg.to_string() {
-                return Err(Error(ErrorKind::AlgorithmNotMatched));
+                return Err(Error(ErrorKind::AlgorithmMismatch));
             }
             verify_signature(f2s, &signature, key)?;
         }
         SignatureValidation::KeyResolver(resolver) => {
             let key = (resolver)(&header, &claims);
             if alg.is_some() && *alg.as_ref().unwrap() != key.alg.to_string() {
-                return Err(Error(ErrorKind::AlgorithmNotMatched));
+                return Err(Error(ErrorKind::AlgorithmMismatch));
             }
             verify_signature(f2s, &signature, &key)?;
         }
