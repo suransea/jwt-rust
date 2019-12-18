@@ -1,4 +1,4 @@
-//! Parse
+//! Decode
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -50,7 +50,7 @@ fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     }
 }
 
-pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> Result<Token<T>, Error> {
+pub fn decode<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> Result<Token<T>, Error> {
     let (signature, f2s) = rsplit2_dot(token)?;
     let signature = bs64::to_bytes(signature.to_owned())?;
 
@@ -98,10 +98,10 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
     Ok(Token { header, claims, signature })
 }
 
-pub fn parse_default<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
-    parse(token, &Config::default())
+pub fn decode_default<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
+    decode(token, &Config::default())
 }
 
-pub fn parse_verify_none<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
-    parse(token, &VERIFY_NONE)
+pub fn decode_verify_none<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
+    decode(token, &VERIFY_NONE)
 }

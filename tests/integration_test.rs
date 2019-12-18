@@ -62,23 +62,23 @@ fn test_sign_custom_header() {
 }
 
 #[test]
-fn test_parse() {
+fn test_decode() {
     let tok = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs";
 
-    // parse claims to standard jwt::Claims
-    let t1: Token<Claims> = jws::parse_verify_none(tok).unwrap();
+    // decode claims to standard jwt::Claims
+    let t1: Token<Claims> = jws::decode_verify_none(tok).unwrap();
 
-    // parse claims to custom claims
-    let t2: Token<CustomClaims> = jws::parse_verify_none(tok).unwrap();
+    // decode claims to custom claims
+    let t2: Token<CustomClaims> = jws::decode_verify_none(tok).unwrap();
 
-    // parse claims to serde_json::Map
-    let t3: Token<Map<String, Value>> = jws::parse_verify_none(tok).unwrap();
+    // decode claims to serde_json::Map
+    let t3: Token<Map<String, Value>> = jws::decode_verify_none(tok).unwrap();
 
     println!("{:?}\n{:?}\n{:?}", t1, t2, t3);
 }
 
 #[test]
-fn test_parse_error() {
+fn test_decode_error() {
     // generate
     let mut c = Claims::new();
     c.iss = Some("sea".to_owned());
@@ -95,7 +95,7 @@ fn test_parse_error() {
     println!("{}", t);
 
 
-    // parse
+    // decode
     let signature_validation = SignatureValidation::KeyResolver(|h, c| {
         Key::new("secret", Algorithm::HS256)
     });
@@ -107,7 +107,7 @@ fn test_parse_error() {
         exp_validation: true,
     };
 
-    let t: Option<Token<Claims>> = jws::parse(&t, &conf)
+    let t: Option<Token<Claims>> = jws::decode(&t, &conf)
         .map(Option::Some)
         .unwrap_or_else(|err| {
             println!("{}", err.kind());

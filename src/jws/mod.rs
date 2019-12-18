@@ -6,12 +6,12 @@ use serde_json as json;
 use crate::bs64;
 use crate::error::Error;
 
-pub use self::parse::{Config, parse, parse_default, parse_verify_none, SignatureValidation};
+pub use self::decode::{Config, decode, decode_default, decode_verify_none, SignatureValidation};
 pub use self::sign::{Algorithm, Key};
 
 mod sign;
 mod verify;
-mod parse;
+mod decode;
 
 /// Registered Header Parameter Names, see https://tools.ietf.org/html/rfc7515#section-4.1
 #[derive(Debug, Serialize, Deserialize)]
