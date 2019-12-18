@@ -4,7 +4,7 @@ use std::fmt;
 use std::string;
 
 #[derive(Debug)]
-pub struct Error(ErrorKind);
+pub struct Error(pub ErrorKind);
 
 impl Error {
     pub fn kind(&self) -> &ErrorKind {
@@ -14,21 +14,27 @@ impl Error {
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    InvalidFormat(String),
-    InvalidSignature,
+    Malformed,
+    AlgorithmNotMatched,
+    SignatureInvalid,
+    KeyInvalid,
     BeforeIat,
     BeforeNbf,
     Expired(u64),
+    Signing,
 }
 
 impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
-            ErrorKind::InvalidFormat(s) => write!(f, "invalid format. {}", s),
-            ErrorKind::InvalidSignature => write!(f, "invalid signature."),
+            ErrorKind::Malformed => write!(f, "malformed token"),
+            ErrorKind::AlgorithmNotMatched => write!(f, "algorithm don't matched."),
+            ErrorKind::SignatureInvalid => write!(f, "invalid signature."),
             ErrorKind::BeforeIat => write!(f, "token used before iat."),
             ErrorKind::BeforeNbf => write!(f, "token used before nbf."),
-            ErrorKind::Expired(nsec) => write!(f, "token has expired by {}s.", nsec),
+            ErrorKind::Expired(nsec) => write!(f, "token expired by {}s.", nsec),
+            ErrorKind::KeyInvalid => write!(f, "invalid key."),
+            ErrorKind::Signing => write!(f, "errors occur in signing."),
         }
     }
 }
@@ -46,19 +52,31 @@ impl From<ErrorKind> for Error {
 }
 
 impl From<base64::DecodeError> for Error {
-    fn from(err: base64::DecodeError) -> Self {
-        Error(ErrorKind::InvalidFormat(err.to_string()))
+    fn from(_: base64::DecodeError) -> Self {
+        Error(ErrorKind::Malformed)
     }
 }
 
 impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
-        Error(ErrorKind::InvalidFormat(err.to_string()))
+    fn from(_: serde_json::Error) -> Self {
+        Error(ErrorKind::Malformed)
     }
 }
 
 impl From<string::FromUtf8Error> for Error {
-    fn from(err: string::FromUtf8Error) -> Self {
-        Error(ErrorKind::InvalidFormat(err.to_string()))
+    fn from(_: string::FromUtf8Error) -> Self {
+        Error(ErrorKind::Malformed)
+    }
+}
+
+impl From<ring::error::KeyRejected> for Error {
+    fn from(_: ring::error::KeyRejected) -> Self {
+        Error(ErrorKind::KeyInvalid)
+    }
+}
+
+impl From<ring::error::Unspecified> for Error {
+    fn from(_: ring::error::Unspecified) -> Self {
+        Error(ErrorKind::Signing)
     }
 }

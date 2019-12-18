@@ -42,11 +42,11 @@ static VERIFY_NONE: Config = Config {
     exp_validation: false,
 };
 
-fn rsplit2_dot(s: &str) -> Result<(&str, &str), ErrorKind> {
+fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     let mut it = s.rsplitn(2, ".");
     match (it.next(), it.next()) {
         (Some(x), Some(y)) => Ok((x, y)),
-        _ => Err(ErrorKind::InvalidFormat("cannot split with a dot.".to_owned())),
+        _ => Err(Error(ErrorKind::Malformed)),
     }
 }
 
@@ -59,15 +59,22 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
     let header = bs64::to_string(header.to_owned())?;
     let claims = bs64::to_string(claims.to_owned())?;
 
-    let header = json::from_str(&header)?;
+    let header: Header = json::from_str(&header)?;
     let claims: Value = json::from_str(&claims)?;
 
+    let alg = &header.alg;
     match &config.signature_validation {
         SignatureValidation::Key(key) => {
+            if alg.is_some() && *alg.as_ref().unwrap() != key.alg.to_string() {
+                return Err(Error(ErrorKind::AlgorithmNotMatched));
+            }
             verify_signature(f2s, &signature, key)?;
         }
         SignatureValidation::KeyResolver(resolver) => {
             let key = (resolver)(&header, &claims);
+            if alg.is_some() && *alg.as_ref().unwrap() != key.alg.to_string() {
+                return Err(Error(ErrorKind::AlgorithmNotMatched));
+            }
             verify_signature(f2s, &signature, &key)?;
         }
         SignatureValidation::None => {}

@@ -4,6 +4,7 @@ use serde::Serialize;
 use serde_json as json;
 
 use crate::bs64;
+use crate::error::Error;
 
 pub use self::parse::{Config, parse, parse_default, parse_verify_none, SignatureValidation};
 pub use self::sign::{Algorithm, Key};
@@ -72,7 +73,7 @@ impl<T: Serialize> Token<T> {
         }
     }
 
-    pub fn sign(&mut self, key: &Key) {
+    pub fn sign(&mut self, key: &Key) -> Result<(), Error> {
         self.header.alg = Some(key.alg.to_string());
         let header = json::to_string(&self.header)
             .map(bs64::from_string)
@@ -83,7 +84,8 @@ impl<T: Serialize> Token<T> {
             .unwrap();
 
         let f2s: String = [header, claims].join(".");
-        self.signature = key.sign(&f2s);
+        self.signature = key.sign(&f2s)?;
+        Ok(())
     }
 }
 

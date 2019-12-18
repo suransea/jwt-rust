@@ -9,7 +9,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{Map, Value};
 
 use jwts::{Claims, jws};
-use jwts::jws::{Algorithm, Header, Key, SignatureValidation, Token};
+use jwts::jws::{Algorithm, Config, Header, Key, SignatureValidation, Token};
 
 fn now_unix_secs() -> u64 {
     SystemTime::now()
@@ -100,7 +100,7 @@ fn test_parse_error() {
         Key::new("secret", Algorithm::HS256)
     });
 
-    let conf = jws::Config {
+    let conf = Config {
         signature_validation,
         iat_validation: true,
         nbf_validation: true,
