@@ -1,11 +1,11 @@
-//! Signature
+//! Algorithm
 
 use ring::hmac;
 use ring::rand::SystemRandom;
 use ring::signature;
-use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPair};
+use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPair, UnparsedPublicKey, VerificationAlgorithm};
 
-use crate::error::Error;
+use crate::error::{Error, ErrorKind};
 
 pub enum Algorithm {
     HS256,
@@ -73,6 +73,20 @@ impl Key {
             Algorithm::PS512 => sign_rsa(data, self, &signature::RSA_PSS_SHA512),
         }
     }
+
+    pub fn verify(&self, data: impl AsRef<[u8]>, sig: impl AsRef<[u8]>) -> Result<(), Error> {
+        match self.alg {
+            Algorithm::HS256 | Algorithm::HS384 | Algorithm::HS512 => verify_symmetric(data, sig, self),
+            Algorithm::RS256 => verify_asymmetric(data, sig, self, &signature::RSA_PKCS1_2048_8192_SHA256),
+            Algorithm::RS384 => verify_asymmetric(data, sig, self, &signature::RSA_PKCS1_2048_8192_SHA384),
+            Algorithm::RS512 => verify_asymmetric(data, sig, self, &signature::RSA_PKCS1_2048_8192_SHA512),
+            Algorithm::ES256 => verify_asymmetric(data, sig, self, &signature::ECDSA_P256_SHA256_FIXED),
+            Algorithm::ES384 => verify_asymmetric(data, sig, self, &signature::ECDSA_P384_SHA384_FIXED),
+            Algorithm::PS256 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA256),
+            Algorithm::PS384 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA384),
+            Algorithm::PS512 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA512),
+        }
+    }
 }
 
 fn sign_hmac(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: hmac::Algorithm) -> Result<Vec<u8>, Error> {
@@ -94,4 +108,18 @@ fn sign_ecdsa(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: &'static Ecdsa
     let rng = SystemRandom::new();
     let sig = key_pair.sign(&rng, data.as_ref())?;
     Ok(sig.as_ref().to_owned())
+}
+
+fn verify_symmetric(msg: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Key) -> Result<(), Error> {
+    let real_sign = key.sign(msg)?;
+    if real_sign.as_slice() != sig.as_ref() {
+        return Err(Error(ErrorKind::InvalidSignature));
+    }
+    Ok(())
+}
+
+fn verify_asymmetric(msg: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Key, alg: &'static dyn VerificationAlgorithm) -> Result<(), Error> {
+    let key = UnparsedPublicKey::new(alg, key.as_ref());
+    key.verify(msg.as_ref(), sig.as_ref())
+        .map_err(|_| Error(ErrorKind::InvalidSignature))
 }

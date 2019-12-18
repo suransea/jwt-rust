@@ -6,12 +6,11 @@ use serde_json as json;
 use crate::bs64;
 use crate::error::Error;
 
-pub use self::decode::{Config, decode, decode_default, decode_verify_none, SignatureValidation};
+pub use self::parse::{Config, parse, parse_default, parse_validate_none, SignatureValidation};
 pub use self::sign::{Algorithm, Key};
 
 mod sign;
-mod verify;
-mod decode;
+mod parse;
 
 /// Registered Header Parameter Names, see https://tools.ietf.org/html/rfc7515#section-4.1
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,53 +52,47 @@ impl Header {
     }
 }
 
+impl Default for Header {
+    fn default() -> Self {
+        Header::new()
+    }
+}
+
 #[derive(Debug)]
 pub struct Token<T: Serialize> {
     pub header: Header,
-    pub claims: T,
+    pub payload: T,
     pub signature: Vec<u8>,
 }
 
 impl<T: Serialize> Token<T> {
-    pub fn with_claims(claims: T) -> Self {
-        Token::with_header_and_claims(Header::new(), claims)
+    pub fn with_payload(payload: T) -> Self {
+        Token::with_header_and_payload(Header::new(), payload)
     }
 
-    pub fn with_header_and_claims(header: Header, claims: T) -> Self {
+    pub fn with_header_and_payload(header: Header, payload: T) -> Self {
         Token {
             header,
-            claims,
-            signature: Default::default(),
+            payload,
+            signature: Vec::new(),
         }
     }
 
-    pub fn sign(&mut self, key: &Key) -> Result<(), Error> {
+    pub fn sign(&mut self, key: &Key) -> Result<String, Error> {
         self.header.alg = Some(key.alg.to_string());
         let header = json::to_string(&self.header)
             .map(bs64::from_string)
             .unwrap();
 
-        let claims = json::to_string(&self.claims)
+        let payload = json::to_string(&self.payload)
             .map(bs64::from_string)
             .unwrap();
 
-        let f2s: String = [header, claims].join(".");
+        let f2s = [header, payload].join(".");
         self.signature = key.sign(&f2s)?;
-        Ok(())
-    }
-}
 
-impl<T: Serialize> ToString for Token<T> {
-    fn to_string(&self) -> String {
-        let header = json::to_string(&self.header)
-            .map(bs64::from_string)
-            .unwrap();
+        let trd = bs64::from_bytes(&self.signature);
 
-        let claims = json::to_string(&self.claims)
-            .map(bs64::from_string)
-            .unwrap();
-
-        let signature = bs64::from_bytes(&self.signature);
-        [header, claims, signature].join(".")
+        Ok([f2s, trd].join("."))
     }
 }

@@ -1,6 +1,5 @@
 //! Errors
 
-use std::fmt;
 use std::string;
 
 #[derive(Debug)]
@@ -14,13 +13,19 @@ impl Error {
 
 #[derive(Debug)]
 pub enum ErrorKind {
+    // parse
     Malformed,
-    AlgorithmMismatch,
-    SignatureInvalid,
-    InvalidKey,
+
+    // validate
+    AlgMiss,
+    AlgMismatch,
+    InvalidSignature,
     InvalidIat,
     BeforeNbf,
     TokenExpired(u64),
+
+    // signing
+    InvalidKey,
     Signing,
 }
 
