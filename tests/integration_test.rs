@@ -40,7 +40,7 @@ fn test_sign() {
     let mut t2 = Token::with_payload(c2);
     let mut t3 = Token::with_payload(c3);
 
-    let key = Key::new("secret", Algorithm::HS256);
+    let key = Key::new(b"secret", Algorithm::HS256);
     let t1 = t1.sign(&key).unwrap_or_default();
     let t2 = t2.sign(&key).unwrap_or_default();
     let t3 = t3.sign(&key).unwrap_or_default();
@@ -98,7 +98,7 @@ fn test_parse_error() {
 
     // parse
     let signature_validation = SignatureValidation::KeyResolver(|h, c| {
-        Key::new("secret", Algorithm::HS256)
+        Key::new(b"secret", Algorithm::HS256)
     });
 
     let conf = Config {

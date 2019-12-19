@@ -8,16 +8,27 @@ use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPa
 use crate::error::{Error, ErrorKind};
 
 pub enum Algorithm {
+    /// HMAC using SHA-256
     HS256,
+    /// HMAC using SHA-384
     HS384,
+    /// HMAC using SHA-512
     HS512,
+    /// PKCS#1 1.5 padding using SHA-256 for RSA signatures
     RS256,
+    /// PKCS#1 1.5 padding using SHA-384 for RSA signatures
     RS384,
+    /// PKCS#1 1.5 padding using SHA-512 for RSA signatures
     RS512,
+    /// ECDSA signatures using the P-256 curve and SHA-256
     ES256,
+    /// ECDSA signatures using the P-384 curve and SHA-384
     ES384,
+    /// RSA PSS padding using SHA-256 for RSA signatures
     PS256,
+    /// RSA PSS padding using SHA-384 for RSA signatures
     PS384,
+    /// RSA PSS padding using SHA-512 for RSA signatures
     PS512,
 }
 
