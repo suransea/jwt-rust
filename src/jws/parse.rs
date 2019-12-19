@@ -62,6 +62,7 @@ static VALIDATE_NONE: Config = Config {
 };
 
 /// Reverse split the string to 2 sections with '.'
+#[inline]
 fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     let mut it = s.rsplitn(2, ".");
     match (it.next(), it.next()) {
@@ -70,6 +71,7 @@ fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     }
 }
 
+#[inline]
 fn validate_alg(alg: &Option<String>, expected: &Algorithm) -> Result<(), ErrorKind> {
     if alg.is_none() || alg.as_ref().unwrap().as_str() != expected.to_string() {
         return Err(ErrorKind::InvalidAlg);
@@ -77,6 +79,7 @@ fn validate_alg(alg: &Option<String>, expected: &Algorithm) -> Result<(), ErrorK
     Ok(())
 }
 
+#[inline]
 fn validate_iat(iat: &Option<u64>) -> Result<(), ErrorKind> {
     if iat.is_some() && time::now_secs() < iat.unwrap() {
         return Err(ErrorKind::InvalidIat);
@@ -84,6 +87,7 @@ fn validate_iat(iat: &Option<u64>) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+#[inline]
 fn validate_nbf(nbf: &Option<u64>) -> Result<(), ErrorKind> {
     if nbf.is_some() && time::now_secs() < nbf.unwrap() {
         return Err(ErrorKind::NotBefore);
@@ -91,6 +95,7 @@ fn validate_nbf(nbf: &Option<u64>) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+#[inline]
 fn validate_exp(exp: &Option<u64>) -> Result<(), ErrorKind> {
     if exp.is_some() {
         let now = time::now_secs();
@@ -102,6 +107,7 @@ fn validate_exp(exp: &Option<u64>) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+#[inline]
 fn validate_claim(val: &Option<&str>, expected: &Option<String>, or: ErrorKind) -> Result<(), ErrorKind> {
     if expected.is_some() {
         if val.is_none() || val.unwrap() != expected.as_ref().unwrap() {
@@ -163,11 +169,13 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
 /// Parse a token string with default config.
 ///
 /// Validate `iat`, `nbf` and `exp`, if there are.
+#[inline]
 pub fn parse_default<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
     parse(token, &Config::default())
 }
 
 /// Parse a token without any validation.
+#[inline]
 pub fn parse_validate_none<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
     parse(token, &VALIDATE_NONE)
 }
