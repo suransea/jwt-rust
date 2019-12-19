@@ -56,24 +56,28 @@ pub enum SignError {
 }
 
 impl From<ErrorKind> for Error {
+    #[inline]
     fn from(kind: ErrorKind) -> Self {
         Error(kind)
     }
 }
 
 impl From<SignError> for Error {
+    #[inline]
     fn from(err: SignError) -> Self {
         Error(ErrorKind::Signing(err))
     }
 }
 
 impl From<base64::DecodeError> for Error {
+    #[inline]
     fn from(_: base64::DecodeError) -> Self {
         Error(ErrorKind::Malformed)
     }
 }
 
 impl From<serde_json::Error> for Error {
+    #[inline]
     fn from(_: serde_json::Error) -> Self {
         Error(ErrorKind::Malformed)
     }
@@ -86,12 +90,14 @@ impl From<string::FromUtf8Error> for Error {
 }
 
 impl From<ring::error::KeyRejected> for Error {
+    #[inline]
     fn from(_: ring::error::KeyRejected) -> Self {
         Error(ErrorKind::Signing(SignError::InvalidKey))
     }
 }
 
 impl From<ring::error::Unspecified> for Error {
+    #[inline]
     fn from(_: ring::error::Unspecified) -> Self {
         Error(ErrorKind::Signing(SignError::Unspecific))
     }

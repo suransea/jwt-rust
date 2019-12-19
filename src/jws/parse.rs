@@ -62,7 +62,6 @@ static VALIDATE_NONE: Config = Config {
 };
 
 /// Reverse split the string to 2 sections with '.'
-#[inline]
 fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     let mut it = s.rsplitn(2, ".");
     match (it.next(), it.next()) {
