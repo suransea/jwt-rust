@@ -22,6 +22,10 @@ pub struct Config {
     pub iat_validation: bool,
     pub nbf_validation: bool,
     pub exp_validation: bool,
+    pub expected_iss: Option<String>,
+    pub expected_sub: Option<String>,
+    pub expected_aud: Option<String>,
+    pub expected_jti: Option<String>,
 }
 
 impl Default for Config {
@@ -31,6 +35,10 @@ impl Default for Config {
             iat_validation: true,
             nbf_validation: true,
             exp_validation: true,
+            expected_iss: None,
+            expected_sub: None,
+            expected_aud: None,
+            expected_jti: None,
         }
     }
 }
@@ -40,6 +48,10 @@ static VALIDATE_NONE: Config = Config {
     iat_validation: false,
     nbf_validation: false,
     exp_validation: false,
+    expected_iss: None,
+    expected_sub: None,
+    expected_aud: None,
+    expected_jti: None,
 };
 
 fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
@@ -50,12 +62,9 @@ fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     }
 }
 
-fn validate_alg(alg: &Option<String>, compared: &Algorithm) -> Result<(), ErrorKind> {
-    if alg.is_none() {
-        return Err(ErrorKind::AlgorithmMiss);
-    }
-    if alg.as_ref().unwrap().as_str() != compared.to_string() {
-        return Err(ErrorKind::AlgorithmMismatch);
+fn validate_alg(alg: &Option<String>, expected: &Algorithm) -> Result<(), ErrorKind> {
+    if alg.is_none() || alg.as_ref().unwrap().as_str() != expected.to_string() {
+        return Err(ErrorKind::InvalidAlg);
     }
     Ok(())
 }
@@ -85,6 +94,15 @@ fn validate_exp(exp: &Option<u64>) -> Result<(), ErrorKind> {
     Ok(())
 }
 
+fn validate_claim(val: &Option<&str>, expected: &Option<String>, or: ErrorKind) -> Result<(), ErrorKind> {
+    if expected.is_some() {
+        if val.is_none() || val.unwrap() != expected.as_ref().unwrap() {
+            return Err(or);
+        }
+    }
+    Ok(())
+}
+
 pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> Result<Token<T>, Error> {
     let (signature, f2s) = rsplit2_dot(token)?;
     let signature = bs64::to_bytes(signature)?;
@@ -109,6 +127,11 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
         }
         SignatureValidation::None => {}
     }
+
+    validate_claim(&payload["iss"].as_str(), &config.expected_iss, ErrorKind::InvalidIss)?;
+    validate_claim(&payload["aud"].as_str(), &config.expected_aud, ErrorKind::InvalidAud)?;
+    validate_claim(&payload["sub"].as_str(), &config.expected_sub, ErrorKind::InvalidSub)?;
+    validate_claim(&payload["jti"].as_str(), &config.expected_jti, ErrorKind::InvalidJti)?;
 
     if config.nbf_validation {
         let nbf = payload["nbf"].as_u64();

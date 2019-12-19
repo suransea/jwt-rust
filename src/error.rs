@@ -20,13 +20,19 @@ pub enum ErrorKind {
     Malformed,
 
     // validate
-    /// Header "alg" expected
-    AlgorithmMiss,
     /// Header "alg" does not match with the validated algorithm
-    AlgorithmMismatch,
+    InvalidAlg,
+    /// Claim "iss" does not match
+    InvalidIss,
+    /// Claim "sub" does not match
+    InvalidSub,
+    /// Claim "aud" does not match
+    InvalidAud,
+    /// Claim "jti" does not match
+    InvalidJti,
     /// Signature does not match
     InvalidSignature,
-    /// Invalid iat
+    /// Now before the issued time
     InvalidIat,
     /// Token not active
     NotBefore,

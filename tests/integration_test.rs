@@ -106,6 +106,10 @@ fn test_parse_error() {
         iat_validation: true,
         nbf_validation: true,
         exp_validation: true,
+        expected_iss: Some("sea".to_owned()),
+        expected_sub: None,
+        expected_aud: None,
+        expected_jti: None,
     };
 
     let t: Option<Token<Claims>> = jws::parse(&t, &conf)
