@@ -113,7 +113,7 @@ fn sign_ecdsa(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: &'static Ecdsa
 fn verify_symmetric(msg: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Key) -> Result<(), Error> {
     let real_sign = key.sign(msg)?;
     if real_sign.as_slice() != sig.as_ref() {
-        return Err(Error(ErrorKind::InvalidSignature));
+        return Err(Error::from(ErrorKind::InvalidSignature));
     }
     Ok(())
 }
@@ -121,5 +121,5 @@ fn verify_symmetric(msg: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Key) -> 
 fn verify_asymmetric(msg: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Key, alg: &'static dyn VerificationAlgorithm) -> Result<(), Error> {
     let key = UnparsedPublicKey::new(alg, key.as_ref());
     key.verify(msg.as_ref(), sig.as_ref())
-        .map_err(|_| Error(ErrorKind::InvalidSignature))
+        .map_err(|_| Error::from(ErrorKind::InvalidSignature))
 }

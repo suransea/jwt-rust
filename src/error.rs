@@ -2,8 +2,9 @@
 
 use std::string;
 
+/// An error that might occur when signing and parsing a token
 #[derive(Debug)]
-pub struct Error(pub ErrorKind);
+pub struct Error(ErrorKind);
 
 impl Error {
     pub fn kind(&self) -> &ErrorKind {
@@ -11,27 +12,47 @@ impl Error {
     }
 }
 
+/// All error kinds in signing and parsing.
 #[derive(Debug)]
 pub enum ErrorKind {
     // parse
+    /// Token malformed
     Malformed,
 
     // validate
-    AlgMiss,
-    AlgMismatch,
+    /// Header "alg" expected
+    AlgorithmMiss,
+    /// Header "alg" does not match with the validated algorithm
+    AlgorithmMismatch,
+    /// Signature does not match
     InvalidSignature,
+    /// Invalid iat
     InvalidIat,
-    BeforeNbf,
+    /// Token not active
+    NotBefore,
+    /// Token expired by seconds
     TokenExpired(u64),
 
     // signing
+    /// Error in signing
+    Signing(SignError),
+}
+
+#[derive(Debug)]
+pub enum SignError {
     InvalidKey,
-    Signing,
+    Unspecific,
 }
 
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Error(kind)
+    }
+}
+
+impl From<SignError> for Error {
+    fn from(err: SignError) -> Self {
+        Error(ErrorKind::Signing(err))
     }
 }
 
@@ -55,12 +76,12 @@ impl From<string::FromUtf8Error> for Error {
 
 impl From<ring::error::KeyRejected> for Error {
     fn from(_: ring::error::KeyRejected) -> Self {
-        Error(ErrorKind::InvalidKey)
+        Error(ErrorKind::Signing(SignError::InvalidKey))
     }
 }
 
 impl From<ring::error::Unspecified> for Error {
     fn from(_: ring::error::Unspecified) -> Self {
-        Error(ErrorKind::Signing)
+        Error(ErrorKind::Signing(SignError::Unspecific))
     }
 }

@@ -46,13 +46,16 @@ fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     let mut it = s.rsplitn(2, ".");
     match (it.next(), it.next()) {
         (Some(x), Some(y)) => Ok((x, y)),
-        _ => Err(Error(ErrorKind::Malformed)),
+        _ => Err(Error::from(ErrorKind::Malformed)),
     }
 }
 
 fn validate_alg(alg: &Option<String>, compared: &Algorithm) -> Result<(), ErrorKind> {
-    if alg.is_some() && alg.as_ref().unwrap().as_str() != compared.to_string() {
-        return Err(ErrorKind::AlgMismatch);
+    if alg.is_none() {
+        return Err(ErrorKind::AlgorithmMiss);
+    }
+    if alg.as_ref().unwrap().as_str() != compared.to_string() {
+        return Err(ErrorKind::AlgorithmMismatch);
     }
     Ok(())
 }
@@ -66,7 +69,7 @@ fn validate_iat(iat: &Option<u64>) -> Result<(), ErrorKind> {
 
 fn validate_nbf(nbf: &Option<u64>) -> Result<(), ErrorKind> {
     if nbf.is_some() && time::now_secs() < nbf.unwrap() {
-        return Err(ErrorKind::BeforeNbf);
+        return Err(ErrorKind::NotBefore);
     }
     Ok(())
 }
