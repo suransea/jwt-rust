@@ -7,6 +7,7 @@ use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPa
 
 use crate::error::{Error, ErrorKind};
 
+/// Algorithms for signing and verifying.
 pub enum Algorithm {
     /// HMAC using SHA-256
     HS256,
@@ -50,18 +51,22 @@ impl ToString for Algorithm {
     }
 }
 
+/// A key to use for signing and verifying.
 pub struct Key {
     val: Vec<u8>,
     pub alg: Algorithm,
 }
 
 impl AsRef<[u8]> for Key {
+    #[inline]
     fn as_ref(&self) -> &[u8] {
         self.val.as_ref()
     }
 }
 
 impl Key {
+    /// Create a new `Key` with the specific bytes and algorithm.
+    #[inline]
     pub fn new(key: impl AsRef<[u8]>, alg: Algorithm) -> Self {
         Key {
             val: key.as_ref().to_owned(),
@@ -69,6 +74,7 @@ impl Key {
         }
     }
 
+    /// Calculate the signature of the data.
     pub fn sign(&self, data: impl AsRef<[u8]>) -> Result<Vec<u8>, Error> {
         match self.alg {
             Algorithm::HS256 => sign_hmac(data, self, hmac::HMAC_SHA256),
@@ -85,6 +91,7 @@ impl Key {
         }
     }
 
+    /// Verify the signature.
     pub fn verify(&self, data: impl AsRef<[u8]>, sig: impl AsRef<[u8]>) -> Result<(), Error> {
         match self.alg {
             Algorithm::HS256 | Algorithm::HS384 | Algorithm::HS512 => verify_symmetric(data, sig, self),

@@ -4,6 +4,11 @@ version = "0.1.0"
 authors = ["sea <simpleslight@icloud.com>"]
 license = "Apache-2.0"
 edition = "2018"
+description = "A rust implementation of JSON Web Tokens."
+homepage = "https://github.com/suransea/jwt-rust"
+repository = "https://github.com/suransea/jwt-rust"
+keywords = ["jwt", "jsonwebtoken"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

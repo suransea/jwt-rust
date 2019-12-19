@@ -39,6 +39,8 @@ pub struct Header {
 }
 
 impl Header {
+    /// Create a new `Header`, the `typ` value is "JWT".
+    #[inline]
     pub fn new() -> Self {
         Header {
             typ: Some("JWT".to_string()),
@@ -53,23 +55,37 @@ impl Header {
 }
 
 impl Default for Header {
+    #[inline]
     fn default() -> Self {
         Header::new()
     }
 }
 
+/// A JWS token.
 #[derive(Debug)]
 pub struct Token<T: Serialize> {
+    /// header of token
     pub header: Header,
+    /// payload of token
     pub payload: T,
+    /// signature of token, default is
+    /// an empty vector, assigned when signing or parsing.
     pub signature: Vec<u8>,
 }
 
 impl<T: Serialize> Token<T> {
+    /// Create a `Token` with the specific payload.
+    ///
+    /// The payload should be `Serialize`, such as
+    /// `jwts::Claims`, `HashMap`, a custom
+    /// struct derived `Serialize`, etc.
+    #[inline]
     pub fn with_payload(payload: T) -> Self {
         Token::with_header_and_payload(Header::new(), payload)
     }
 
+    /// Create a `Token` with the specific header and payload.
+    #[inline]
     pub fn with_header_and_payload(header: Header, payload: T) -> Self {
         Token {
             header,
@@ -78,6 +94,9 @@ impl<T: Serialize> Token<T> {
         }
     }
 
+    /// Sign the token, and return the signed token as `String`.
+    ///
+    /// An error might occur with ErrorKind::Signing(SignError).
     pub fn sign(&mut self, key: &Key) -> Result<String, Error> {
         self.header.alg = Some(key.alg.to_string());
         let header = json::to_string(&self.header)

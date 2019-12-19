@@ -7,6 +7,8 @@ use std::string;
 pub struct Error(ErrorKind);
 
 impl Error {
+    /// Returns the error kind.
+    #[inline]
     pub fn kind(&self) -> &ErrorKind {
         &self.0
     }
@@ -44,9 +46,12 @@ pub enum ErrorKind {
     Signing(SignError),
 }
 
+/// Types of signing error.
 #[derive(Debug)]
 pub enum SignError {
+    /// An invalid key provided
     InvalidKey,
+    /// An unspecific error returns from the crate `ring`
     Unspecific,
 }
 

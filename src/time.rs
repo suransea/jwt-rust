@@ -11,6 +11,7 @@ fn now_unix() -> Duration {
 }
 
 /// System time since UNIX_EPOCH as seconds.
+#[inline]
 pub fn now_secs() -> u64 {
     now_unix().as_secs()
 }

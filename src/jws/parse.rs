@@ -11,12 +11,18 @@ use crate::jws::{Algorithm, Header, Token};
 use crate::jws::sign::Key;
 use crate::time;
 
+/// Signature validation type.
 pub enum SignatureValidation {
+    /// Validate a signature with the key
     Key(Key),
+    /// Validate a signature with the key from the resolver
     KeyResolver(fn(header: &Header, payload: &Value) -> Key),
+    /// Don't validate signatures
     None,
 }
 
+
+/// Configs for parsing.
 pub struct Config {
     pub signature_validation: SignatureValidation,
     pub iat_validation: bool,
@@ -29,6 +35,7 @@ pub struct Config {
 }
 
 impl Default for Config {
+    #[inline]
     fn default() -> Self {
         Config {
             signature_validation: SignatureValidation::None,
@@ -54,6 +61,7 @@ static VALIDATE_NONE: Config = Config {
     expected_jti: None,
 };
 
+/// Reverse split the string to 2 sections with '.'
 fn rsplit2_dot(s: &str) -> Result<(&str, &str), Error> {
     let mut it = s.rsplitn(2, ".");
     match (it.next(), it.next()) {
@@ -103,6 +111,7 @@ fn validate_claim(val: &Option<&str>, expected: &Option<String>, or: ErrorKind) 
     Ok(())
 }
 
+/// Parse a token string, with the specific config.
 pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> Result<Token<T>, Error> {
     let (signature, f2s) = rsplit2_dot(token)?;
     let signature = bs64::to_bytes(signature)?;
@@ -151,10 +160,14 @@ pub fn parse<T: Serialize + DeserializeOwned>(token: &str, config: &Config) -> R
     Ok(Token { header, payload, signature })
 }
 
+/// Parse a token string with default config.
+///
+/// Validate `iat`, `nbf` and `exp`, if there are.
 pub fn parse_default<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
     parse(token, &Config::default())
 }
 
+/// Parse a token without any validation.
 pub fn parse_validate_none<T: Serialize + DeserializeOwned>(token: &str) -> Result<Token<T>, Error> {
     parse(token, &VALIDATE_NONE)
 }
