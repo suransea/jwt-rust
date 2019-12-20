@@ -1,8 +1,14 @@
 # jwt-rust
 
+[![jwts](https://img.shields.io/crates/v/jwts?style=flat-square)](https://crates.io/crates/jwts)
+
 [![jwt](http://jwt.io/img/logo-asset.svg)](http://jwt.io)
 
 A rust implementation of JSON Web Tokens.
+
+View at [crates.io](https://crates.io/crates/jwts).
+
+View at [docs.rs](https://docs.rs/crate/jwts).
 
 ## Examples
 
