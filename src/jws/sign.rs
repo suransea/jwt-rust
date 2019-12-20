@@ -1,4 +1,4 @@
-//! Algorithm
+//! Sign
 
 use ring::hmac;
 use ring::rand::SystemRandom;
@@ -15,21 +15,21 @@ pub enum Algorithm {
     HS384,
     /// HMAC using SHA-512
     HS512,
-    /// PKCS#1 1.5 padding using SHA-256 for RSA signatures
+    /// RSASSA-PKCS1-v1_5 using SHA-256
     RS256,
-    /// PKCS#1 1.5 padding using SHA-384 for RSA signatures
+    /// RSASSA-PKCS1-v1_5 using SHA-384
     RS384,
-    /// PKCS#1 1.5 padding using SHA-512 for RSA signatures
+    /// RSASSA-PKCS1-v1_5 using SHA-512
     RS512,
-    /// ECDSA signatures using the P-256 curve and SHA-256
+    /// ECDSA using P-256 and SHA-256
     ES256,
-    /// ECDSA signatures using the P-384 curve and SHA-384
+    /// ECDSA using P-384 and SHA-384
     ES384,
-    /// RSA PSS padding using SHA-256 for RSA signatures
+    /// RSASSA-PSS using SHA-256 and MGF1 with SHA-256
     PS256,
-    /// RSA PSS padding using SHA-384 for RSA signatures
+    /// RSASSA-PSS using SHA-384 and MGF1 with SHA-384
     PS384,
-    /// RSA PSS padding using SHA-512 for RSA signatures
+    /// RSASSA-PSS using SHA-512 and MGF1 with SHA-512
     PS512,
 }
 
@@ -66,6 +66,11 @@ impl AsRef<[u8]> for Key {
 
 impl Key {
     /// Create a new `Key` with the specific bytes and algorithm.
+    ///
+    /// For RSA(RS*, PS*), use DER-encoded RSAPrivateKey format private key and
+    /// DER-encoded RSAPublicKey-formatted public key.
+    ///
+    /// For ECDSA(ES*), use PKCS#8 v1 format key.
     #[inline]
     pub fn new(key: impl AsRef<[u8]>, alg: Algorithm) -> Self {
         Key {
@@ -114,7 +119,7 @@ fn sign_hmac(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: hmac::Algorithm
 }
 
 fn sign_rsa(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: &'static dyn RsaEncoding) -> Result<Vec<u8>, Error> {
-    let key_pair = RsaKeyPair::from_pkcs8(key.as_ref())?;
+    let key_pair = RsaKeyPair::from_der(key.as_ref())?;
     let rng = SystemRandom::new();
     let mut sig = vec![0; key_pair.public_modulus_len()];
     key_pair.sign(alg, &rng, data.as_ref(), &mut sig)?;

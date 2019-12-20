@@ -84,6 +84,7 @@ impl From<serde_json::Error> for Error {
 }
 
 impl From<string::FromUtf8Error> for Error {
+    #[inline]
     fn from(_: string::FromUtf8Error) -> Self {
         Error(ErrorKind::Malformed)
     }

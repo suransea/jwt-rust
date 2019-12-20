@@ -94,21 +94,23 @@ Sign and verify use crate [ring](https://crates.io/crates/ring).
 - [x] HS256 - HMAC using SHA-256
 - [x] HS384 - HMAC using SHA-384
 - [x] HS512 - HMAC using SHA-512
-- [x] RS256 - PKCS#1 1.5 padding using SHA-256 for RSA signatures
-- [x] RS384 - PKCS#1 1.5 padding using SHA-384 for RSA signatures
-- [x] RS512 - PKCS#1 1.5 padding using SHA-512 for RSA signatures
-- [x] ES256 - ECDSA signatures using the P-256 curve and SHA-256
-- [x] ES384 - ECDSA signatures using the P-384 curve and SHA-384
-- [ ] ES512 - ECDSA signatures using the P-512 curve and SHA-512
-- [x] PS256 - RSA PSS padding using SHA-256 for RSA signatures
-- [x] PS384 - RSA PSS padding using SHA-384 for RSA signatures
-- [x] PS512 - RSA PSS padding using SHA-512 for RSA signatures
+- [x] RS256 - RSASSA-PKCS1-v1_5 using SHA-256
+- [x] RS384 - RSASSA-PKCS1-v1_5 using SHA-384
+- [x] RS512 - RSASSA-PKCS1-v1_5 using SHA-512
+- [x] ES256 - ECDSA using P-256 and SHA-256
+- [x] ES384 - ECDSA using P-384 and SHA-384
+- [ ] ES512 - ECDSA using P-521 and SHA-512
+- [x] PS256 - RSASSA-PSS using SHA-256 and MGF1 with SHA-256
+- [x] PS384 - RSASSA-PSS using SHA-384 and MGF1 with SHA-384
+- [x] PS512 - RSASSA-PSS using SHA-512 and MGF1 with SHA-512
 
 ## More
 
 [RFC 7519](https://tools.ietf.org/html/rfc7519) JSON Web Token (JWT)
 
 [RFC 7515](https://tools.ietf.org/html/rfc7515) JSON Web Signature (JWS)
+
+[RFC 7518](https://tools.ietf.org/html/rfc7518) JSON Web Algorithms (JWA)
 
 ## License
 
