@@ -28,7 +28,7 @@
 //! use jwts::{Claims, ValidationConfig};
 //! use jwts::jws::{Algorithm, Key, Token};
 //!
-//! let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEiLCJleHAiOjE1NzcwODcxNjIsIm5iZiI6MTU3NzA4NzA2MiwiaWF0IjoxNTc3MDg3MDYyfQ.l87oZmjZzuiXQA2S_XIatbOA2l6Jnr4xXT5tyMLJyHM";
+//! let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEiLCJleHAiOjEwNTc3MDkxMDU2LCJuYmYiOjE1NzcwOTEwNTYsImlhdCI6MTU3NzA5MTA1Nn0.4HwFlFB3LMhVc2xpsGBGSO3ut1KmnFdF8JrsL589ytw";
 //!
 //! let key = Key::new(b"secret", Algorithm::HS256);
 //! let verified: Token<Claims> = Token::verify_with_key(token, &key).unwrap();
