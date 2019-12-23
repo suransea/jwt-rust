@@ -17,13 +17,15 @@ impl Error {
 /// All error kinds in signing and parsing.
 #[derive(Debug)]
 pub enum ErrorKind {
-    // parse
+    // decode and verify
     /// Token malformed
     Malformed,
+    /// Header "alg" does not match with the verified algorithm
+    InvalidAlg,
+    /// Signature does not match
+    InvalidSignature,
 
     // validate
-    /// Header "alg" does not match with the validated algorithm
-    InvalidAlg,
     /// Claim "iss" does not match
     InvalidIss,
     /// Claim "sub" does not match
@@ -32,8 +34,6 @@ pub enum ErrorKind {
     InvalidAud,
     /// Claim "jti" does not match
     InvalidJti,
-    /// Signature does not match
-    InvalidSignature,
     /// Now before the issued time
     InvalidIat,
     /// Token not active

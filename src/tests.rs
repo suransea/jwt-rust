@@ -1,4 +1,4 @@
-//! Tests for mod `jwts`.
+//! Tests for mod `jwts`
 
 use crate::time;
 

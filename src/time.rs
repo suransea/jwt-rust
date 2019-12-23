@@ -1,4 +1,4 @@
-//! Timestamp functions.
+//! Timestamp functions
 
 use std::time;
 use std::time::{Duration, SystemTime};
