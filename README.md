@@ -6,10 +6,6 @@
 
 A rust implementation of JSON Web Tokens.
 
-View at [crates.io](https://crates.io/crates/jwts).
-
-View at [docs.rs](https://docs.rs/crate/jwts).
-
 ## Examples
 
 ### Sign
@@ -27,27 +23,31 @@ let mut token = Token::with_payload(claims);
 // token.header.cty = Some("application/example".to_owned());
 
 let key = Key::new(b"secret", Algorithm::HS256);
-let token = token.sign(&key).unwrap_or_default();
+let token = token.sign(&key).unwrap();
 
 assert_eq!(token, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs");
 ```
 
-### Parse and Verify
+### Verify
 
 ```rust
-use jwts::{Claims, jws};
-use jwts::jws::{Algorithm, Config, Key, SignatureValidation, Token};
+use jwts::{Claims, ValidationConfig};
+use jwts::jws::{Algorithm, Key, Token};
+
+let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEiLCJleHAiOjE1NzcwODcxNjIsIm5iZiI6MTU3NzA4NzA2MiwiaWF0IjoxNTc3MDg3MDYyfQ.l87oZmjZzuiXQA2S_XIatbOA2l6Jnr4xXT5tyMLJyHM";
 
 let key = Key::new(b"secret", Algorithm::HS256);
-let signature_validation = SignatureValidation::Key(key);
+let verified: Token<Claims> = Token::verify_with_key(token, &key).unwrap();
 
 // use key resolver like:
-// let signature_validation = SignatureValidation::KeyResolver(|header, payload| {
+// let verified: Token<Claims> = Token::verify_with_key_resolver(token, |header, payload| {
 //     // return a Key here
-// });
+// }).unwrap();
 
-let config = Config {
-    signature_validation,
+println!("{:?}", verified);
+
+// validate claims
+let config = ValidationConfig {
     iat_validation: true,
     nbf_validation: true,
     exp_validation: true,
@@ -56,22 +56,12 @@ let config = Config {
     expected_aud: None,
     expected_jti: None,
 };
-
-let token = "a jwt token";
-
-let token: Option<Token<Claims>> = jws::parse(token, &config)
-    .map(Option::Some)
-    .unwrap_or_else(|err| {
-        println!("{:?}", err.kind());
-        None
-    });
-println!("{:?}", token);
+verified.validate_claims(&config).unwrap();
 ```
 
 ### Custom Claims
 
 ```rust
-use jwts::{Claims, jws};
 use jwts::jws::{Algorithm, Key, Token};
 
 #[macro_use]
@@ -88,8 +78,8 @@ let claims = CustomClaims {
 
 let mut token = Token::with_payload(claims);
 let key = Key::new(b"secret", Algorithm::HS256);
-let token = token.sign(&key).unwrap_or_default();
-let token: Token<CustomClaims> = jws::parse_validate_none(&token).unwrap();
+let token = token.sign(&key).unwrap();
+let token: Token<CustomClaims> = Token::decode(&token).unwrap(); // here decode without verification for demonstration
 println!("{:?}", token);
 ```
 
