@@ -41,31 +41,17 @@ pub enum ErrorKind {
     /// Token expired by seconds
     TokenExpired(u64),
 
-    // signing
-    /// Error in signing
-    Signing(SignError),
-}
-
-/// Types of signing error.
-#[derive(Debug)]
-pub enum SignError {
+    // sign
     /// An invalid key provided
     InvalidKey,
-    /// An unspecific error returns from the crate `ring`
-    Unspecific,
+    /// An error in `ring` signing
+    Crypto,
 }
 
 impl From<ErrorKind> for Error {
     #[inline]
     fn from(kind: ErrorKind) -> Self {
         Error(kind)
-    }
-}
-
-impl From<SignError> for Error {
-    #[inline]
-    fn from(err: SignError) -> Self {
-        Error(ErrorKind::Signing(err))
     }
 }
 
@@ -93,13 +79,13 @@ impl From<string::FromUtf8Error> for Error {
 impl From<ring::error::KeyRejected> for Error {
     #[inline]
     fn from(_: ring::error::KeyRejected) -> Self {
-        Error(ErrorKind::Signing(SignError::InvalidKey))
+        Error(ErrorKind::InvalidKey)
     }
 }
 
 impl From<ring::error::Unspecified> for Error {
     #[inline]
     fn from(_: ring::error::Unspecified) -> Self {
-        Error(ErrorKind::Signing(SignError::Unspecific))
+        Error(ErrorKind::Crypto)
     }
 }
