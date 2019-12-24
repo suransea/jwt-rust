@@ -1,7 +1,7 @@
 # jwt-rust
 
 [![jwts](https://img.shields.io/crates/v/jwts?style=flat-square)](https://crates.io/crates/jwts)
-![jwts](https://img.shields.io/github/languages/top/suransea/jwt-rust?style=flat-square)
+[![jwts](https://img.shields.io/github/languages/top/suransea/jwt-rust?style=flat-square)](https://github.com/suransea/jwt-rust)
 [![jwts](https://img.shields.io/crates/d/jwts?style=flat-square)](https://crates.io/crates/jwts)
 [![jwts](https://img.shields.io/crates/l/jwts?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0)
 
