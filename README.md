@@ -1,6 +1,9 @@
 # jwt-rust
 
 [![jwts](https://img.shields.io/crates/v/jwts?style=flat-square)](https://crates.io/crates/jwts)
+![jwts](https://img.shields.io/github/languages/top/suransea/jwt-rust?style=flat-square)
+[![jwts](https://img.shields.io/crates/d/jwts?style=flat-square)](https://crates.io/crates/jwts)
+[![jwts](https://img.shields.io/crates/l/jwts?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0)
 
 [![jwt](http://jwt.io/img/logo-asset.svg)](http://jwt.io)
 
@@ -87,18 +90,18 @@ println!("{:?}", token);
 
 Sign and verify use crate [ring](https://crates.io/crates/ring).
 
-- [x] HS256 - HMAC using SHA-256
-- [x] HS384 - HMAC using SHA-384
-- [x] HS512 - HMAC using SHA-512
-- [x] RS256 - RSASSA-PKCS1-v1_5 using SHA-256
-- [x] RS384 - RSASSA-PKCS1-v1_5 using SHA-384
-- [x] RS512 - RSASSA-PKCS1-v1_5 using SHA-512
-- [x] ES256 - ECDSA using P-256 and SHA-256
-- [x] ES384 - ECDSA using P-384 and SHA-384
-- [ ] ES512 - ECDSA using P-521 and SHA-512
-- [x] PS256 - RSASSA-PSS using SHA-256 and MGF1 with SHA-256
-- [x] PS384 - RSASSA-PSS using SHA-384 and MGF1 with SHA-384
-- [x] PS512 - RSASSA-PSS using SHA-512 and MGF1 with SHA-512
+-   [x] HS256 - HMAC using SHA-256
+-   [x] HS384 - HMAC using SHA-384
+-   [x] HS512 - HMAC using SHA-512
+-   [x] RS256 - RSASSA-PKCS1-v1_5 using SHA-256
+-   [x] RS384 - RSASSA-PKCS1-v1_5 using SHA-384
+-   [x] RS512 - RSASSA-PKCS1-v1_5 using SHA-512
+-   [x] ES256 - ECDSA using P-256 and SHA-256
+-   [x] ES384 - ECDSA using P-384 and SHA-384
+-   [ ] ES512 - ECDSA using P-521 and SHA-512
+-   [x] PS256 - RSASSA-PSS using SHA-256 and MGF1 with SHA-256
+-   [x] PS384 - RSASSA-PSS using SHA-384 and MGF1 with SHA-384
+-   [x] PS512 - RSASSA-PSS using SHA-512 and MGF1 with SHA-512
 
 ## More
 
