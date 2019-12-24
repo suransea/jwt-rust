@@ -45,8 +45,6 @@ impl<T: Serialize> Token<T> {
     }
 
     /// Sign the token, and return the signed token as `String`.
-    ///
-    /// An error might occur with ErrorKind::Signing(SignError).
     pub fn sign(&mut self, key: &Key) -> Result<String, Error> {
         self.header.alg = Some(key.alg.to_string());
         let header = json::to_string(&self.header)

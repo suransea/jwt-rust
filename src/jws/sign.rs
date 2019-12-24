@@ -67,7 +67,7 @@ impl AsRef<[u8]> for Key {
 impl Key {
     /// Create a new `Key` with the specific bytes and algorithm.
     ///
-    /// For RSA(RS*, PS*), use DER-encoded RSAPrivateKey format private key and
+    /// For RSA(RS*, PS*), use DER-encoded RSAPrivateKey-formatted private key and
     /// DER-encoded RSAPublicKey-formatted public key.
     ///
     /// For ECDSA(ES*), use PKCS#8 v1 format key.
