@@ -1,5 +1,7 @@
 //! JSON Web Signature, see https://tools.ietf.org/html/rfc7515
 
+use serde_derive::{Deserialize, Serialize};
+
 use crate::error::ErrorKind;
 
 pub use self::sign::{Algorithm, Key};

@@ -66,9 +66,7 @@ verified.validate_claims(&config).unwrap();
 
 ```rust
 use jwts::jws::{Algorithm, Key, Token};
-
-#[macro_use]
-extern crate serde_derive;
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CustomClaims {

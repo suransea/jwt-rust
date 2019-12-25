@@ -57,9 +57,7 @@
 //!
 //! ```rust
 //! use jwts::jws::{Algorithm, Key, Token};
-//!
-//! #[macro_use]
-//! extern crate serde_derive;
+//! use serde_derive::{Deserialize, Serialize};
 //!
 //! #[derive(Debug, Serialize, Deserialize)]
 //! struct CustomClaims {
@@ -77,10 +75,8 @@
 //! println!("{:?}", token);
 //! ```
 
-#[macro_use]
-extern crate serde_derive;
-
 use serde::Serialize;
+use serde_derive::{Deserialize, Serialize};
 use serde_json as json;
 
 pub use self::error::{Error, ErrorKind};

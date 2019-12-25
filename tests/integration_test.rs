@@ -1,12 +1,10 @@
 //! Integration tests.
 
-#[macro_use]
-extern crate serde_derive;
-
 use std::collections::HashMap;
 use std::time;
 use std::time::{Duration, SystemTime};
 
+use serde_derive::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use jwts::{Claims, ValidationConfig};
