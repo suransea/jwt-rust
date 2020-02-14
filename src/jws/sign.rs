@@ -8,6 +8,7 @@ use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPa
 use crate::error::{Error, ErrorKind};
 
 /// Algorithms for signing and verifying.
+#[derive(Clone, Copy)]
 pub enum Algorithm {
     /// HMAC using SHA-256
     HS256,
