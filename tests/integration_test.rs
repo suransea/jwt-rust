@@ -47,6 +47,30 @@ fn test_sign() {
 }
 
 #[test]
+fn test_sign_rsa() {
+    let mut claims = Claims::new();
+    claims.iss = Some("sea".to_owned());
+
+    let mut token = Token::with_payload(claims);
+
+    let key = include_bytes!("rsa-pri.der").to_vec();
+    let algorithms = [
+        Algorithm::RS256,
+        Algorithm::RS384,
+        Algorithm::RS512,
+        Algorithm::PS256,
+        Algorithm::PS384,
+        Algorithm::PS512,
+    ];
+    for &algorithm in algorithms.iter() {
+        let key = Key::new(&key, algorithm);
+        let token = token.sign(&key).unwrap();
+
+        println!("{}", token);
+    }
+}
+
+#[test]
 fn test_sign_custom_header() {
     let mut c = Claims::new();
     c.iss = Some("sea".to_owned());
