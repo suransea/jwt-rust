@@ -71,6 +71,26 @@ fn test_sign_rsa() {
 }
 
 #[test]
+fn test_sign_ecdsa() {
+    let mut claims = Claims::new();
+    claims.iss = Some("sea".to_owned());
+
+    let mut token = Token::with_payload(claims);
+
+    let key256 = include_bytes!("ecdsa-pri.pk8").to_vec();
+    let key256 = Key::new(&key256, Algorithm::ES256);
+    let token256 = token.sign(&key256).unwrap();
+
+    println!("{}", token256);
+
+    let key384 = include_bytes!("ecdsa-pri384.pk8").to_vec();
+    let key384 = Key::new(&key384, Algorithm::ES384);
+    let token384 = token.sign(&key384).unwrap();
+
+    println!("{}", token384);
+}
+
+#[test]
 fn test_sign_custom_header() {
     let mut c = Claims::new();
     c.iss = Some("sea".to_owned());
