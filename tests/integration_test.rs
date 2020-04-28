@@ -121,8 +121,21 @@ fn test_decode() {
 }
 
 #[test]
-fn test_verify() {
-    // generate
+fn test_decode_error() {
+    let token = "eyJ0eXAiOiUzI1NiJ9.eyJpc3MizZWEifQ.L0c0gTyOYbmUQ_LUCn2OLhFs";
+
+    // decode the payload to standard jwt::Claims
+    let result = Token::<Claims>::decode(token);
+
+    match result {
+        Ok(token) => println!("{:?}", token),
+        Err(err) => println!("{:?}", err)
+    }
+}
+
+#[test]
+fn test_validate() {
+    // generate a token for validating claims
     let mut c = Claims::new();
     c.iss = Some("sea".to_owned());
     c.iat = Some(now_unix_secs());
@@ -130,14 +143,10 @@ fn test_verify() {
     c.exp = Some(now_unix_secs() + 100);
 
     let mut t = Token::with_payload(c);
-    let t = t.sign(&Key::new("secret", Algorithm::HS256)).unwrap();
+    let t = t.sign(&Key::new(b"secret", Algorithm::HS256)).unwrap();
     println!("{}", t);
 
-
-    // verify
-    let t: Token<Claims> = Token::verify_with_key_resolver(&t, |_header, _payload| {
-        Key::new(b"secret", Algorithm::HS256)
-    }).unwrap();
+    let t: Token<Claims> = Token::decode(&t).unwrap();
 
     // validate claims
     let conf = ValidationConfig {
@@ -149,6 +158,55 @@ fn test_verify() {
         expected_aud: None,
         expected_jti: None,
     };
-    t.validate_claims(&conf).unwrap();
-    println!("{:?}", t);
+    let result = t.validate_claims(&conf);
+    match result {
+        Ok(()) => println!("valid claims."),
+        Err(err) => println!("{:?}", err)
+    }
+}
+
+#[test]
+fn test_verify() {
+    let mut c = Claims::new();
+    c.iss = Some("sea".to_owned());
+
+    let mut t = Token::with_payload(c);
+    let t = t.sign(&Key::new(b"secret", Algorithm::HS256)).unwrap();
+    println!("{}", t);
+
+    // verify
+    let _verified: Token<Claims> = Token::verify_with_key_resolver(&t, |_header, _payload| {
+        Key::new(b"secret", Algorithm::HS256)
+    }).unwrap();
+}
+
+#[test]
+fn test_verify_rsa() {
+    let mut claims = Claims::new();
+    claims.iss = Some("sea".to_owned());
+
+    let mut token = Token::with_payload(claims);
+
+    let key = include_bytes!("rsa-pri.der").to_vec();
+    let algorithms = [
+        Algorithm::RS256,
+        Algorithm::RS384,
+        Algorithm::RS512,
+        Algorithm::PS256,
+        Algorithm::PS384,
+        Algorithm::PS512,
+    ];
+    for &algorithm in algorithms.iter() {
+        let key = Key::new(&key, algorithm);
+        let token = token.sign(&key).unwrap();
+
+        println!("{}", token);
+        let key = include_bytes!("rsa-pub.der").to_vec();
+        let key = Key::new(key, algorithm);
+        let result = Token::<Claims>::verify_with_key(&token, &key);
+        match result {
+            Ok(_token) => println!("signature verified."),
+            Err(err) => println!("{:?}", err)
+        }
+    }
 }
