@@ -75,7 +75,6 @@
 //! println!("{:?}", token);
 //! ```
 
-use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use serde_json as json;
 
@@ -139,7 +138,7 @@ impl Claims {
     }
 }
 
-impl<T: Serialize> jws::Token<T> {
+impl<T: serde::Serialize> jws::Token<T> {
     /// Validate claims with the specific config.
     pub fn validate_claims(&self, config: &ValidationConfig) -> Result<(), Error> {
         let payload = json::to_value(&self.payload)?;
