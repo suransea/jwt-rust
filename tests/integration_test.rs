@@ -91,6 +91,20 @@ fn test_sign_ecdsa() {
 }
 
 #[test]
+fn test_sign_eddsa() {
+    let mut claims = Claims::new();
+    claims.iss = Some("sea".to_owned());
+
+    let mut token = Token::with_payload(claims);
+
+    let key = include_bytes!("eddsa-pri.pk8").to_vec();
+    let key = Key::new(&key, Algorithm::EdDSA);
+    let token = token.sign(&key).unwrap();
+
+    println!("{}", token);
+}
+
+#[test]
 fn test_sign_custom_header() {
     let mut c = Claims::new();
     c.iss = Some("sea".to_owned());
@@ -208,5 +222,26 @@ fn test_verify_rsa() {
             Ok(_token) => println!("signature verified."),
             Err(err) => println!("{:?}", err)
         }
+    }
+}
+
+#[test]
+fn test_verify_eddsa() {
+    let mut claims = Claims::new();
+    claims.iss = Some("sea".to_owned());
+
+    let mut token = Token::with_payload(claims);
+
+    let key = include_bytes!("eddsa-pri.pk8").to_vec();
+    let key = Key::new(&key, Algorithm::EdDSA);
+    let token = token.sign(&key).unwrap();
+    println!("{}", token);
+
+    let key = include_bytes!("eddsa-pub.der").to_vec();
+    let key = Key::new(key, Algorithm::EdDSA);
+    let result = Token::<Claims>::verify_with_key(&token, &key);
+    match result {
+        Ok(_token) => println!("signature verified."),
+        Err(err) => println!("{:?}", err)
     }
 }

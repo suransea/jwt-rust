@@ -3,7 +3,7 @@
 use ring::hmac;
 use ring::rand::SystemRandom;
 use ring::signature;
-use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, RsaEncoding, RsaKeyPair, UnparsedPublicKey, VerificationAlgorithm};
+use ring::signature::{EcdsaKeyPair, EcdsaSigningAlgorithm, Ed25519KeyPair, RsaEncoding, RsaKeyPair, UnparsedPublicKey, VerificationAlgorithm};
 
 use crate::error::{Error, ErrorKind};
 
@@ -32,6 +32,8 @@ pub enum Algorithm {
     PS384,
     /// RSASSA-PSS using SHA-512 and MGF1 with SHA-512
     PS512,
+    /// EdDSA using SHA-512
+    EdDSA,
 }
 
 impl ToString for Algorithm {
@@ -48,6 +50,7 @@ impl ToString for Algorithm {
             Algorithm::PS256 => "PS256".to_owned(),
             Algorithm::PS384 => "PS384".to_owned(),
             Algorithm::PS512 => "PS512".to_owned(),
+            Algorithm::EdDSA => "EdDSA".to_owned(),
         }
     }
 }
@@ -94,6 +97,7 @@ impl Key {
             Algorithm::PS256 => sign_rsa(data, self, &signature::RSA_PSS_SHA256),
             Algorithm::PS384 => sign_rsa(data, self, &signature::RSA_PSS_SHA384),
             Algorithm::PS512 => sign_rsa(data, self, &signature::RSA_PSS_SHA512),
+            Algorithm::EdDSA => sign_eddsa(data, self)
         }
     }
 
@@ -109,6 +113,7 @@ impl Key {
             Algorithm::PS256 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA256),
             Algorithm::PS384 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA384),
             Algorithm::PS512 => verify_asymmetric(data, sig, self, &signature::RSA_PSS_2048_8192_SHA512),
+            Algorithm::EdDSA => verify_asymmetric(data, sig, self, &signature::ED25519),
         }
     }
 }
@@ -131,6 +136,12 @@ fn sign_ecdsa(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>, alg: &'static Ecdsa
     let key_pair = EcdsaKeyPair::from_pkcs8(alg, key.as_ref())?;
     let rng = SystemRandom::new();
     let sig = key_pair.sign(&rng, data.as_ref())?;
+    Ok(sig.as_ref().to_owned())
+}
+
+fn sign_eddsa(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Result<Vec<u8>, Error> {
+    let key_pair = Ed25519KeyPair::from_pkcs8(key.as_ref())?;
+    let sig = key_pair.sign(data.as_ref());
     Ok(sig.as_ref().to_owned())
 }
 
