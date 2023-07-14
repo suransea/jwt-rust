@@ -1,91 +1,57 @@
 //! Errors
 
-use std::string;
+use std::fmt::{Display, Formatter};
 
-/// An error that might occur when signing and parsing a token
-#[derive(Debug)]
-pub struct Error(ErrorKind);
-
-impl Error {
-    /// Returns the error kind.
-    #[inline]
-    pub fn kind(&self) -> &ErrorKind {
-        &self.0
-    }
-}
-
-/// All error kinds in signing and parsing.
-#[derive(Debug)]
-pub enum ErrorKind {
-    // decode and verify
+/// An error that might occur when signing and decode a token
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Error {
     /// Token malformed
     Malformed,
-    /// Header "alg" does not match with the verified algorithm
-    InvalidAlg,
     /// Signature does not match
     InvalidSignature,
-
-    // validate
-    /// Claim "iss" does not match
-    InvalidIss,
-    /// Claim "sub" does not match
-    InvalidSub,
-    /// Claim "aud" does not match
-    InvalidAud,
-    /// Claim "jti" does not match
-    InvalidJti,
-    /// Now before the issued time
-    InvalidIat,
-    /// Token not active
-    NotBefore,
-    /// Token expired by seconds
-    TokenExpired(u64),
-
-    // sign
     /// An invalid key provided
-    InvalidKey,
-    /// An error in `ring` signing
+    InvalidKey(&'static str),
+    /// Unspecific crypto error
     Crypto,
 }
 
-impl From<ErrorKind> for Error {
-    #[inline]
-    fn from(kind: ErrorKind) -> Self {
-        Error(kind)
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Malformed => f.write_str("Malformed"),
+            Error::InvalidSignature => f.write_str("Invalid signature"),
+            Error::InvalidKey(cause) => write!(f, "Invalid key: {}", cause),
+            Error::Crypto => f.write_str("Unspecific crypto error"),
+        }
     }
 }
+
+impl std::error::Error for Error {}
 
 impl From<base64::DecodeError> for Error {
     #[inline]
     fn from(_: base64::DecodeError) -> Self {
-        Error(ErrorKind::Malformed)
+        Error::Malformed
     }
 }
 
 impl From<serde_json::Error> for Error {
     #[inline]
     fn from(_: serde_json::Error) -> Self {
-        Error(ErrorKind::Malformed)
-    }
-}
-
-impl From<string::FromUtf8Error> for Error {
-    #[inline]
-    fn from(_: string::FromUtf8Error) -> Self {
-        Error(ErrorKind::Malformed)
+        Error::Malformed
     }
 }
 
 impl From<ring::error::KeyRejected> for Error {
     #[inline]
-    fn from(_: ring::error::KeyRejected) -> Self {
-        Error(ErrorKind::InvalidKey)
+    fn from(err: ring::error::KeyRejected) -> Self {
+        Error::InvalidKey(err.description_())
     }
 }
 
 impl From<ring::error::Unspecified> for Error {
     #[inline]
     fn from(_: ring::error::Unspecified) -> Self {
-        Error(ErrorKind::Crypto)
+        Error::Crypto
     }
 }

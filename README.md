@@ -13,93 +13,87 @@ A rust implementation of JSON Web Tokens.
 
 ### Sign
 
-```rust
-use jwts::Claims;
-use jwts::jws::{Algorithm, Key, Token};
+ ```rust
+ use jwts::{Claims, jws};
+ use jwts::jws::Header;
+ use jwts::jws::alg::HS256;
 
-let mut claims = Claims::new();
-claims.iss = Some("sea".to_owned());
+ let claims = Claims {
+     iss: Some("sea".to_owned()),
+     ..Default::default()
+ };
+ assert_eq!(
+     jws::sign::<HS256>(Header::default(), &claims, b"secret"),
+     Ok("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs".to_owned()),
+ );
+ ```
 
-let mut token = Token::with_payload(claims);
+ ### Verify
 
-// custom the header like:
-// token.header.cty = Some("application/example".to_owned());
+ ```rust
+ use jwts::{Claims, jws};
+ use jwts::jws::{Header, Token};
+ use jwts::jws::alg::HS256;
 
-let key = Key::new(b"secret", Algorithm::HS256);
-let token = token.sign(&key).unwrap();
+ let claims = Claims {
+     iss: Some("sea".to_owned()),
+     ..Default::default()
+ };
+ let token = jws::sign::<HS256>(Header::default(), &claims, b"secret").unwrap();
 
-assert_eq!(token, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs");
-```
+ let result = Token::<Claims>::verify_with_key::<HS256>(&token, b"secret");
+ assert!(result.is_ok());
+ ```
 
-### Verify
+ ### Validate Claims
 
-```rust
-use jwts::{Claims, ValidationConfig};
-use jwts::jws::{Algorithm, Key, Token};
+ ```rust
+ use std::time;
+ use std::time::{Duration, SystemTime};
+ use jwts::Claims;
+ use jwts::validate::{ExpectAud, ExpectIss, ExpectJti, ExpectSub, Expired, Iat, NotBefore, Validate};
 
-let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEiLCJleHAiOjEwNTc3MDkxMDU2LCJuYmYiOjE1NzcwOTEwNTYsImlhdCI6MTU3NzA5MTA1Nn0.4HwFlFB3LMhVc2xpsGBGSO3ut1KmnFdF8JrsL589ytw";
+ fn now_secs() -> u64 {
+     SystemTime::now()
+         .duration_since(time::UNIX_EPOCH)
+         .unwrap_or(Duration::ZERO)
+         .as_secs()
+ }
 
-let key = Key::new(b"secret", Algorithm::HS256);
-let verified: Token<Claims> = Token::verify_with_key(token, &key).unwrap();
-
-// use key resolver like:
-// let verified: Token<Claims> = Token::verify_with_key_resolver(token, |header, payload| {
-//     // return a Key here
-// }).unwrap();
-
-println!("{:?}", verified);
-
-// validate claims
-let config = ValidationConfig {
-    iat_validation: true,
-    nbf_validation: true,
-    exp_validation: true,
-    expected_iss: Some("sea".to_owned()),
-    expected_sub: None,
-    expected_aud: None,
-    expected_jti: None,
-};
-verified.validate_claims(&config).unwrap();
-```
-
-### Custom Claims
-
-```rust
-use jwts::jws::{Algorithm, Key, Token};
-use serde_derive::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CustomClaims {
-    iss: String,
-}
-
-let claims = CustomClaims {
-    iss: "sea".to_owned(),
-};
-
-let mut token = Token::with_payload(claims);
-let key = Key::new(b"secret", Algorithm::HS256);
-let token = token.sign(&key).unwrap();
-let token: Token<CustomClaims> = Token::decode(&token).unwrap(); // here decode without verification for demonstration
-println!("{:?}", token);
-```
+ let claims = Claims {
+     iss: Some("sea".to_owned()),
+     sub: Some("subject".to_owned()),
+     aud: Some("audience".to_owned()),
+     jti: Some("id".to_owned()),
+     iat: Some(now_secs()),
+     nbf: Some(now_secs()),
+     exp: Some(now_secs() + 1),
+ };
+ assert_eq!(claims.validate(IssuedAtTime), Ok(()));
+ assert_eq!(claims.validate(NotBeforeTime), Ok(()));
+ assert_eq!(claims.validate(ExpiredTime), Ok(()));
+ assert_eq!(claims.validate(ExpectIss("sea")), Ok(()));
+ assert_eq!(claims.validate(ExpectSub("subject")), Ok(()));
+ assert_eq!(claims.validate(ExpectAud("audience")), Ok(()));
+ assert_eq!(claims.validate(ExpectJti("id")), Ok(()));
+ ```
 
 ## Algorithms
 
 Sign and verify use crate [ring](https://crates.io/crates/ring).
 
--   [x] HS256 - HMAC using SHA-256
--   [x] HS384 - HMAC using SHA-384
--   [x] HS512 - HMAC using SHA-512
--   [x] RS256 - RSASSA-PKCS1-v1_5 using SHA-256
--   [x] RS384 - RSASSA-PKCS1-v1_5 using SHA-384
--   [x] RS512 - RSASSA-PKCS1-v1_5 using SHA-512
--   [x] ES256 - ECDSA using P-256 and SHA-256
--   [x] ES384 - ECDSA using P-384 and SHA-384
--   [ ] ES512 - ECDSA using P-521 and SHA-512
--   [x] PS256 - RSASSA-PSS using SHA-256 and MGF1 with SHA-256
--   [x] PS384 - RSASSA-PSS using SHA-384 and MGF1 with SHA-384
--   [x] PS512 - RSASSA-PSS using SHA-512 and MGF1 with SHA-512
+- [x] HS256 - HMAC using SHA-256
+- [x] HS384 - HMAC using SHA-384
+- [x] HS512 - HMAC using SHA-512
+- [x] RS256 - RSASSA-PKCS1-v1_5 using SHA-256
+- [x] RS384 - RSASSA-PKCS1-v1_5 using SHA-384
+- [x] RS512 - RSASSA-PKCS1-v1_5 using SHA-512
+- [x] ES256 - ECDSA using P-256 and SHA-256
+- [x] ES384 - ECDSA using P-384 and SHA-384
+- [ ] ES512 - ECDSA using P-521 and SHA-512
+- [x] PS256 - RSASSA-PSS using SHA-256 and MGF1 with SHA-256
+- [x] PS384 - RSASSA-PSS using SHA-384 and MGF1 with SHA-384
+- [x] PS512 - RSASSA-PSS using SHA-512 and MGF1 with SHA-512
 
 ## More
 

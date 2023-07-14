@@ -2,16 +2,16 @@
 
 use serde_derive::{Deserialize, Serialize};
 
-use crate::error::ErrorKind;
-
-pub use self::sign::{Algorithm, Key};
+pub use self::alg::Algorithm;
+pub use self::sign::sign;
 pub use self::token::Token;
 
+pub mod alg;
 mod token;
 mod sign;
 
 /// Registered Header Parameter Names, see https://tools.ietf.org/html/rfc7515#section-4.1
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Header {
     /// Type of JWS
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -50,19 +50,11 @@ impl Header {
             x5t: None,
         }
     }
-
-    /// Verify that the algorithm match with `alg`
-    pub fn verify_alg(&self, expected: &Algorithm) -> Result<(), ErrorKind> {
-        if self.alg.is_none() || self.alg.as_ref().unwrap().as_str() != expected.to_string() {
-            return Err(ErrorKind::InvalidAlg);
-        }
-        Ok(())
-    }
 }
 
 impl Default for Header {
     #[inline]
     fn default() -> Self {
-        Header::new()
+        Self::new()
     }
 }
