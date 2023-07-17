@@ -13,8 +13,8 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-base64 = "0.11.0"
-serde = "1.0.103"
-serde_derive = "1.0.103"
-serde_json = "1.0.44"
-ring = "0.16.9"
+base64 = "0.13.0"
+serde = "1.0.136"
+serde_derive = "1.0.136"
+serde_json = "1.0.78"
+ring = "0.16.20"
