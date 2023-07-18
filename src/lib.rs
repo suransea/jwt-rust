@@ -2,7 +2,7 @@
 //!
 //! # Examples
 //!
-//! ### Sign
+//! ## Encode
 //!
 //! ```rust
 //! use jwts::{Claims, jws};
@@ -13,126 +13,159 @@
 //!     iss: Some("sea".to_owned()),
 //!     ..Default::default()
 //! };
-//! assert_eq!(
-//!     jws::sign::<HS256>(Header::default(), &claims, b"secret"),
-//!     Ok("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs".to_owned()),
-//! );
+//! jws::encode::<HS256>(Header::default(), &claims, b"secret").unwrap();
 //! ```
 //!
-//! ### Verify
+//! ## Decode
 //!
 //! ```rust
 //! use jwts::{Claims, jws};
-//! use jwts::jws::{Header, Token};
+//! use jwts::jws::{Header, NoVerify, Token, VerifyWith};
 //! use jwts::jws::alg::HS256;
 //!
-//! let claims = Claims {
-//!     iss: Some("sea".to_owned()),
-//!     ..Default::default()
-//! };
-//! let token = jws::sign::<HS256>(Header::default(), &claims, b"secret").unwrap();
+//! let claims = Claims::default();
+//! let token = jws::encode::<HS256>(Header::default(), &claims, b"secret").unwrap();
 //!
-//! let result = Token::<Claims>::verify_with_key::<HS256>(&token, b"secret");
-//! assert!(result.is_ok());
+//! let Token {..} = jws::decode::<Claims>(&token, NoVerify).unwrap(); // no verify
+//! let Token {..} = jws::decode::<Claims>(&token, VerifyWith::<HS256>(b"secret")).unwrap(); // verify with algorithm and key
 //! ```
 //!
-//! ### Validate Claims
+//! ## Validate Claims
 //!
 //! ```rust
-//! use std::time;
+//! use std::collections::HashMap;
 //! use std::time::{Duration, SystemTime};
 //! use jwts::Claims;
 //! use jwts::validate::{ExpectAud, ExpectIss, ExpectJti, ExpectSub, ExpiredTime, IssuedAtTime, NotBeforeTime, Validate};
-//!
-//! fn now_secs() -> u64 {
-//!     SystemTime::now()
-//!         .duration_since(time::UNIX_EPOCH)
-//!         .unwrap_or(Duration::ZERO)
-//!         .as_secs()
-//! }
 //!
 //! let claims = Claims {
 //!     iss: Some("sea".to_owned()),
 //!     sub: Some("subject".to_owned()),
 //!     aud: Some("audience".to_owned()),
 //!     jti: Some("id".to_owned()),
-//!     iat: Some(now_secs()),
-//!     nbf: Some(now_secs()),
-//!     exp: Some(now_secs() + 1),
+//!     ..Default::default()
 //! };
-//! assert_eq!(claims.validate(IssuedAtTime), Ok(()));
-//! assert_eq!(claims.validate(NotBeforeTime), Ok(()));
-//! assert_eq!(claims.validate(ExpiredTime), Ok(()));
-//! assert_eq!(claims.validate(ExpectIss("sea")), Ok(()));
-//! assert_eq!(claims.validate(ExpectSub("subject")), Ok(()));
-//! assert_eq!(claims.validate(ExpectAud("audience")), Ok(()));
-//! assert_eq!(claims.validate(ExpectJti("id")), Ok(()));
+//! let claims = claims
+//!     .issued_now()
+//!     .expired_in(Duration::from_secs(1))
+//!     .not_before(SystemTime::now());
+//!
+//! claims.validate(IssuedAtTime).unwrap();
+//! claims.validate(NotBeforeTime).unwrap();
+//! claims.validate(ExpiredTime).unwrap();
+//! claims.validate(ExpectIss("sea")).unwrap();
+//! claims.validate(ExpectSub("subject")).unwrap();
+//! claims.validate(ExpectAud("audience")).unwrap();
+//! claims.validate(ExpectJti("id")).unwrap();
+//!
+//! // builtin validation works with any `Serialize` type:
+//! let claims = HashMap::from([("iss", "sea")]);
+//! claims.validate(ExpectIss("sea")).unwrap();
 //! ```
 //!
+//! ## Custom Claims Type
+//!
+//! ```rust
+//! use std::collections::HashMap;
+//! use serde_derive::{Deserialize, Serialize};
+//! use jwts::jws;
+//! use jwts::jws::{Header, Token, VerifyWith};
+//! use jwts::jws::alg::HS256;
+//!
+//! #[derive(Debug, Serialize, Deserialize)]
+//! struct CustomClaims {
+//!     iss: String,
+//! }
+//!
+//! let claims = CustomClaims {
+//!     iss: "sea".to_owned(),
+//! };
+//! let token = jws::encode::<HS256>(Header::default(), &claims, b"secret").unwrap();
+//! let Token {..} = jws::decode::<CustomClaims>(&token, VerifyWith::<HS256>(b"secret")).unwrap();
+//!
+//! // Or use a map directly
+//! let claims = HashMap::from([("iss", "sea")]);
+//! let Token {..} = jws::decode::<HashMap<String, String>>(&token, VerifyWith::<HS256>(b"secret")).unwrap();
+//! ```
+//!
+//! ## Custom Algorithm
+//!
+//! ```rust
+//! use jwts::{Claims, Error, jws};
+//! use jwts::jws::{Algorithm, Header, Token, VerifyWith};
+//!
+//! pub struct None;
+//!
+//! impl Algorithm for None {
+//!     type SignKey = ();
+//!     type VerifyKey = ();
+//!
+//!     fn name() -> &'static str {
+//!         "None"
+//!     }
+//!
+//!     fn sign(data: impl AsRef<[u8]>, key: &Self::SignKey) -> Result<Vec<u8>, Error> {
+//!         Ok([].into())
+//!     }
+//!
+//!     fn verify(data: impl AsRef<[u8]>, sig: impl AsRef<[u8]>, key: &Self::VerifyKey) -> Result<(), Error> {
+//!         sig.as_ref().is_empty().then_some(()).ok_or(Error::InvalidSignature)
+//!     }
+//! }
+//!
+//! let claims = Claims::default();
+//! let token = jws::encode::<None>(Header::default(), &claims, &()).unwrap();
+//! let Token {..} = jws::decode::<Claims>(&token, VerifyWith::<None>(&())).unwrap();
+//! ```
+//!
+//! ## Custom Verification
+//!
+//! ```rust
+//! use jwts::{Claims, Error, jws};
+//! use jwts::jws::{Algorithm, Header, Token, Verify};
+//! use jwts::jws::alg::HS256;
+//!
+//! pub struct CustomVerify;
+//!
+//! impl Verify<Claims> for CustomVerify {
+//!     fn verify(&self, f2s: &str, signature: &[u8], header: &Header, payload: &Claims) -> Result<(), Error> {
+//!         HS256::verify(f2s, signature, b"secret")
+//!     }
+//! }
+//!
+//! let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZWEifQ.L0DLtDjydcSK-c0gTyOYbmUQ_LUCZzqAGCINn2OLhFs";
+//! let Token {..} = jws::decode::<Claims>(&token, CustomVerify).unwrap();
+//! ```
+//!
+//! ## Custom Claims Validation
+//!
+//! ```rust
+//! use jwts::Claims;
+//! use jwts::validate::{Validate, Validation};
+//!
+//! pub struct CustomValidation;
+//!
+//! impl Validation<Claims> for CustomValidation {
+//!     type Error = ();
+//!
+//!     fn validate(&self, claims: &Claims) -> Result<(), Self::Error> {
+//!         claims.aud.is_some().then_some(()).ok_or(())
+//!     }
+//! }
+//!
+//! let claims = Claims {
+//!     aud: Some("audience".to_owned()),
+//!     ..Default::default()
+//! };
+//! claims.validate(CustomValidation).unwrap();
+//! ```
 
-use serde_derive::{Deserialize, Serialize};
-
+pub use self::claims::Claims;
 pub use self::error::Error;
 
 pub mod jws;
-pub mod error;
 pub mod validate;
+mod error;
 mod bs64;
 mod time;
-
-/// Registered Claim Names, see https://tools.ietf.org/html/rfc7519#section-4.1
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Claims {
-    /// Issuer
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub iss: Option<String>,
-    /// Subject
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub: Option<String>,
-    /// Audience
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub aud: Option<String>,
-    /// Expiration Time
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exp: Option<u64>,
-    /// Not Before
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nbf: Option<u64>,
-    /// Issued At
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub iat: Option<u64>,
-    /// JWT ID
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub jti: Option<String>,
-}
-
-impl Claims {
-    /// Create a new `Claims`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use jwts::Claims;
-    ///
-    /// let mut claims = Claims::new();
-    /// ```
-    #[inline]
-    pub fn new() -> Self {
-        Claims {
-            iss: None,
-            sub: None,
-            aud: None,
-            exp: None,
-            nbf: None,
-            iat: None,
-            jti: None,
-        }
-    }
-}
-
-impl Default for Claims {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
+mod claims;
